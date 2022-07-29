@@ -1,7 +1,7 @@
 from transformer_classifier import TransformerClassifier
 
 import os
-
+import dataset_creation
 import sys
 
 sys.path.append(
@@ -61,13 +61,16 @@ def train_model():
 
     X_test = train_list_x[int(len(train_list_x) * 0.85):]
     y_test = train_list_y[int(len(train_list_y) * 0.85):]
-    config = {'epochs': 250, 'neurons': 64, 'batch_size': 8}
+
+    config = {'epochs': 250, 'neurons': 64, 'batch_size': 16}
+
     model = TransformerClassifier(feed_shape, vocabulary_size=vocab_size, config=config)
     #model = LSTM(input_shape=feed_shape, vocabulary_size=vocab_size)
 
     model.fit(X_train, X_val, y_train, y_val)
     metrics = model.model.evaluate(X_test, y_test)
-    model.save(r'C:\Users\andri\Desktop\Tesi\Midi_Classification_and_Generation\models\transformers\model1')
+
+
     #model.summary()
     accuracies = []
     results = []
@@ -126,6 +129,8 @@ def get_train_val_split(train_data1):
 
 
 if __name__ == "__main__":
+
+    #dataset_creation.create_nes_dataset()
 
     print('Creating dataset dirs...')
 

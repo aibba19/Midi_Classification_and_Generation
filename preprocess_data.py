@@ -1,3 +1,4 @@
+import json
 from random import random
 
 from tensorflow import keras
@@ -24,6 +25,19 @@ import numpy as np
 
 from transformers import AutoTokenizer
 
+with open(os.path.join(base_dir, "lists/adventure.json"), "r") as fp:
+    adventure = json.load(fp)
+with open(os.path.join(base_dir, "lists/fighting.json"), "r") as fp:
+    fighting = json.load(fp)
+with open(os.path.join(base_dir, "lists/puzzle.json"), "r") as fp:
+    puzzle = json.load(fp)
+with open(os.path.join(base_dir, "lists/sport.json"), "r") as fp:
+    sport = json.load(fp)
+with open(os.path.join(base_dir, "lists/shooting.json"), "r") as fp:
+    shooting = json.load(fp)
+
+label_lists = adventure + fighting + puzzle + sport + shooting
+
 def create_melody_chords_dataset():
     # Process MIDIs to special MIDI dataset with TMIDIX MIDI Processor
 
@@ -46,10 +60,10 @@ def create_melody_chords_dataset():
     print('This may take a while on a large dataset in particular.')
 
     # Qui ci sono le canzoni di vgmidi db
-    dataset_addr = r"C:\Users\andri\Desktop\Tesi\prove_classificazione\midi_classification copy\nes_dataset"
+    #dataset_addr = r"C:\Users\andri\Desktop\Tesi\Midi_Classification_and_Generation\dataset\vgmidi_training"
 
     # Qui ci sono le canzoni relative al db passato dal professore
-    # dataset_addr = r'C:\Users\andri\Desktop\Tesi\prove_classificazione\midi_classification copy\dataset\nes\nes'
+    dataset_addr = r'C:\Users\andri\Desktop\Tesi\Midi_Classification_and_Generation\dataset\nes_training'
 
     # os.chdir(dataset_addr)
     filez = list()
@@ -238,7 +252,6 @@ def process_melody_chords():
         create_melody_chords_dataset()
 
     melody_chords_f = TMIDIX.Tegridy_Any_Pickle_File_Reader('dataset')
-    #melody_chords_f = TMIDIX.Tegridy_Any_Pickle_File_Reader(r'C:\Users\andri\Desktop\Tesi\Progetto\ints_dataset\pickle')
 
     # Yoda Vers 2.0 Process and prep INTs...
     # Single list for all songs
@@ -256,11 +269,10 @@ def process_melody_chords():
     print('=' * 70)
     print('Processing the dataset...')
 
-    # prendo le label dal csv dove le ho annotate
-    train_data_csv = pd.read_csv(
-        r"C:\Users\andri\Desktop\Tesi\prove_classificazione\midi_classification copy\vgmidi_labelled.csv", sep=";")
-
-    train_data_y = train_data_csv['label'].tolist()
+    #Different approach to create the target label values
+    #train_data_y = load_vgmidi_label()
+    train_data_y = load_nes_label()
+    #create_nes_label()
 
     #Two different options for creating the train database
     #train_list_x, train_list_y = build_list_of_max_50_tokens(melody_chords_f,train_data_y)
@@ -322,6 +334,26 @@ def process_melody_chords():
     #     Xmask[i, :] = tokens['attention_mask']
 
     return train_list_x, train_list_y
+
+def load_vgmidi_label():
+    # prendo le label dal csv dove le ho annotate
+    train_data_csv = pd.read_csv(
+        r"C:\Users\andri\Desktop\Tesi\prove_classificazione\midi_classification copy\vgmidi_labelled.csv", sep=";")
+
+    train_data_y = train_data_csv['label'].tolist()
+
+    return train_data_y
+
+def load_nes_label():
+    # prendo le label dal csv dove le ho annotate
+    train_data_csv = pd.read_csv(
+        r"C:\Users\andri\Desktop\Tesi\Midi_Classification_and_Generation\nes_labelled.csv", sep=";")
+
+    train_data_y = train_data_csv['label'].tolist()
+
+    return train_data_y
+
+
 
 def build_one_stream_list(melody_chords_f,train_data_y):
 
@@ -437,6 +469,7 @@ def build_list_of_max_50_tokens(melody_chords_f,train_data_y):
 
     # This cycle divide the song token in list of max 50 token lenght
     # Each chords list represent a song
+    #[time, dur, ptc, cha, vel]
     for chords_list in tqdm(melody_chords_f):
 
         # train_data1.extend([0])  # Intro/Zero Token
@@ -449,7 +482,7 @@ def build_list_of_max_50_tokens(melody_chords_f,train_data_y):
                 curr_sample = []
             # curr_sample = []
             sample_to_process = chords_list[(j * SEQ_LEN):((j + 1) * SEQ_LEN)]
-            # Slicing on chord list to take only 50 event
+            # Slicing on chord list to take only 50 event max
             # Note that for each event in curr_sample could add two int in curr sample
             for i in sample_to_process:
 
@@ -483,7 +516,7 @@ def build_list_of_max_50_tokens(melody_chords_f,train_data_y):
     train_list_x = np.array(train_list_x)
     train_list_y = np.array(train_list_y)
 
-    train_list_x = keras.preprocessing.sequence.pad_sequences(train_list_x, maxlen=maxlen)
+    train_list_x = keras.preprocessing.sequence.pad_sequences(train_list_x, maxlen=maxlen, padding="post")
 
     return train_list_x, train_list_y
 
